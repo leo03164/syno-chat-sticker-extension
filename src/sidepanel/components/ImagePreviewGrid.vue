@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ImagePreviewItem from './ImagePreviewItem.vue'
+
 interface ImagePreview {
   file: File
   url: string
