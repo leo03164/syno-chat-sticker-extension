@@ -1,6 +1,6 @@
 {
   "name": "vitesse-webext",
-  "displayName": "Vitesse WebExt",
+  "displayName": "Syno Chat Sticker Extension",
   "version": "0.0.1",
   "private": true,
   "packageManager": "pnpm@9.7.1",
@@ -68,9 +68,6 @@
     "web-ext": "^8.2.0",
     "webext-bridge": "^6.0.1",
     "webextension-polyfill": "^0.12.0"
-  },
-  "simple-git-hooks": {
-    "pre-commit": "pnpm lint-staged"
   },
   "lint-staged": {
     "*": "eslint --fix"
