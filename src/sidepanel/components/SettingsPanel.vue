@@ -1,8 +1,33 @@
 <script setup lang="ts">
-import {
-  serverUrl,
-} from '~/logic/storage'
-// import { fetchAllSeries } from '~/background/main'
+import { seriesList, serverUrl, stickerMap } from '~/logic/storage'
+import type { StickerInfo } from '~/types/sticker'
+
+async function fetchSeries() {
+  const res = await fetch(`${serverUrl.value}/series`)
+  const { data } = await res.json()
+  seriesList.value = data
+  await fetchStickers()
+}
+
+async function fetchStickers() {
+  const promiseArr: Promise<Response>[] = []
+
+  seriesList.value.forEach((series) => {
+    const query = new URLSearchParams({
+      series: series.id,
+    })
+
+    promiseArr.push(fetch(`${serverUrl.value}/stickers?${query.toString()}`))
+  })
+
+  const resList = await Promise.all(promiseArr)
+
+  resList.forEach(async (res) => {
+    const { data } = await res.json() as { data: StickerInfo[] }
+    const stickerSeries = data[0].seriesId
+    stickerMap.value.set(stickerSeries, data)
+  })
+}
 </script>
 
 <template>
@@ -36,9 +61,9 @@ import {
         </div>
       </div>
     </div>
-    <!-- <button @click="fetchAllSeries">
-      Fetch
-    </button> -->
+    <button @click="fetchSeries">
+      Save
+    </button>
   </div>
 </template>
 
