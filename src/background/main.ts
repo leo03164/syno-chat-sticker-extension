@@ -66,6 +66,14 @@ onMessage('get-current-tab', async () => {
   }
 })
 
+onMessage('get-sticker-map', async (test: string) => {
+  console.log('test: ', test)
+  return 'test222'
+  // const res = await fetch(`${serverUrl.value}/series`)
+  // const { data } = await res.json() as { data: { id: string }[] }
+  // return data
+})
+
 export async function fetchAllSeries() {
   const res = await fetch(`${serverUrl.value}/series`)
   const { data } = await res.json() as { data: { id: string }[] }

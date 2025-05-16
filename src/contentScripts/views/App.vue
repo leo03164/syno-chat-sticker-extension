@@ -2,10 +2,105 @@
 import { useToggle } from '@vueuse/core'
 import { ref } from 'vue'
 import 'uno.css'
+import { sendMessage } from 'webext-bridge/background'
 import StickerSeriesSelector from '../components/StickerSeriesSelector.vue'
 import StickerGrid from '../components/StickerGrid.vue'
 import { seriesList, stickerMap } from '~/logic/storage'
 import type { SeriesForDisplay } from '~/types/series'
+
+function waitForElement(selector, callback) {
+  const interval = setInterval(() => {
+    const el = document.querySelector(selector)
+    if (el) {
+      clearInterval(interval)
+      callback(el)
+    }
+  }, 1000)
+}
+
+async function processMsgEls(node: HTMLElement) {
+  const targetList = node.querySelectorAll('.msg-text>.text-wrapper>.markdown')
+
+  if (!targetList.length) {
+    return
+  }
+
+  let flag = false
+
+  for (const el of targetList) {
+    const stickerKey = el.innerText
+    const stickerPath = file_path_map[stickerKey]
+
+    if (!stickerPath) {
+      continue
+    }
+
+    try {
+      const imageUrl = ''
+
+      el.innerHTML
+        = `
+          <div class="sticker sticker-post sticker-only">
+            <div ext:qtip=":${stickerKey}:"
+              class="sticker-img"
+              style="
+                width: 320px;
+                height: 320px;
+                background-image: url(${imageUrl});
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+              ">
+            </div>
+          </div>
+        `
+      flag = true
+    }
+    catch (error) {
+      console.error('Error loading image:', error)
+    }
+  }
+
+  if (flag) {
+    scrollToBottom()
+  }
+}
+
+function scrollToBottom() {
+  window.fleXenv.fleXlist[0].scrollUpdate()
+  window.fleXenv.fleXlist[0].fleXcroll.scrollContent(0, window.fleXenv.fleXlist[0].fleXdata.getContentHeight())
+}
+
+function startObserving(targetNode: HTMLElement) {
+  processMsgEls(document.body)
+
+  const observer = new MutationObserver((mutationsList) => {
+    mutationsList.forEach((mutation) => {
+      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+        mutation.addedNodes.forEach((node) => {
+          if (!(node instanceof HTMLElement))
+            return
+          processMsgEls(node)
+        })
+      }
+    })
+  })
+
+  observer.observe(targetNode, {
+    childList: true,
+    subtree: true,
+  })
+}
+
+onMounted(async () => {
+  // startObserving(document.body)
+  const res = await sendMessage('get-sticker-map')
+  console.log('res: ', res)
+})
+
+console.log('stickerMap: ', stickerMap.value)
+
+console.log('Hello World')
 
 const [show, toggle] = useToggle(false)
 
@@ -26,7 +121,7 @@ const seriesListForDisplay = computed<SeriesForDisplay[]>(() => {
   <div class="fixed right-4 bottom-30 m-5 flex items-end font-sans select-none leading-1em z-2147483647">
     <div
       v-show="show"
-      class="w-[300px] h-[340px] flex flex-col bg-white rounded-xl overflow-hidden"
+      class="w-[500px] h-[440px] flex flex-col bg-white rounded-xl overflow-hidden"
       :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'"
       transition="all duration-300"
       :style="{
