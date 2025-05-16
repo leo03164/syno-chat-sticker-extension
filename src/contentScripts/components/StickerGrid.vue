@@ -17,7 +17,7 @@ function handleSendSticker(id: string) {
       v-for="sticker in stickers"
       :key="sticker.stickerId"
       :src="sticker.path"
-      class="w-32 h-32 aspect-square object-contain rounded-xl border border-[#E5E5E7] transition-all duration-200 hover:scale-110 active:scale-95 bg-[#F5F5F7]"
+      class="w-14 h-14 aspect-square object-contain rounded-xl border border-[#E5E5E7] transition-all duration-200 hover:scale-110 active:scale-95 bg-[#F5F5F7]"
       @click="handleSendSticker(sticker.stickerId)"
     >
   </div>
