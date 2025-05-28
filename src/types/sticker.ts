@@ -3,3 +3,8 @@ export interface StickerInfo {
   path: string
   seriesId: string
 }
+
+export interface GetStickersApiParams {
+  seriesId?: string
+  stickerId?: string
+}
