@@ -2,8 +2,8 @@
 import { onMessage } from 'webext-bridge/content-script'
 import { createApp } from 'vue'
 import App from './views/App.vue'
+import { startObserving, waitForElement } from './chat'
 import { setupApp } from '~/logic/common-setup'
-
 // Firefox `browser.tabs.executeScript()` requires scripts return a primitive value
 (() => {
   console.info('[vitesse-webext] Hello world from content script')
@@ -27,4 +27,6 @@ import { setupApp } from '~/logic/common-setup'
   const app = createApp(App)
   setupApp(app)
   app.mount(root)
+
+  waitForElement('body', startObserving)
 })()

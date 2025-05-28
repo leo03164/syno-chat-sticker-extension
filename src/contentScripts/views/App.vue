@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import 'uno.css'
 import StickerSeriesSelector from '../components/StickerSeriesSelector.vue'
 import StickerGrid from '../components/StickerGrid.vue'
-import { seriesList, stickerMap } from '~/logic/storage'
+import { seriesList, seriesMapStickerList } from '~/logic/storage'
 import type { SeriesForDisplay } from '~/types/series'
 
 const [show, toggle] = useToggle(false)
@@ -26,7 +26,7 @@ const seriesListForDisplay = computed<SeriesForDisplay[]>(() => {
   <div class="fixed right-4 bottom-30 m-5 flex items-end font-sans select-none leading-1em z-2147483647">
     <div
       v-show="show"
-      class="w-[300px] h-[340px] flex flex-col bg-white rounded-xl overflow-hidden"
+      class="w-[500px] h-[440px] flex flex-col bg-white rounded-xl overflow-hidden"
       :class="show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'"
       transition="all duration-300"
       :style="{
@@ -54,7 +54,7 @@ const seriesListForDisplay = computed<SeriesForDisplay[]>(() => {
 
       <!-- 貼圖網格區 -->
       <div class="flex-1 overflow-y-auto px-3 py-2" style="overflow-y: overlay;">
-        <StickerGrid :stickers="stickerMap.get(currentSeries) || []" />
+        <StickerGrid :stickers="seriesMapStickerList.get(currentSeries) || []" />
       </div>
 
       <!-- 底部資訊 -->
