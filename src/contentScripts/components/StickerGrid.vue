@@ -2,12 +2,22 @@
 import { defineProps } from 'vue'
 import type { StickerInfo } from '~/types/sticker'
 
-defineProps<{
+interface Props {
   stickers: StickerInfo[]
-}>()
+}
 
-function handleSendSticker(id: string) {
-  console.info(id)
+defineProps<Props>()
+
+async function handleSendSticker(id: string) {
+  try {
+    // 將貼圖 ID 寫入剪貼簿
+    await navigator.clipboard.writeText(`:${id}:`)
+    // 可以加入一個提示，讓使用者知道已經複製成功
+    console.warn('貼圖 ID 已複製到剪貼簿')
+  }
+  catch (error) {
+    console.error('複製到剪貼簿失敗:', error)
+  }
 }
 </script>
 

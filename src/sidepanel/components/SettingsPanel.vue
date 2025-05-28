@@ -1,32 +1,40 @@
 <script setup lang="ts">
-import { seriesList, serverUrl, stickerMap } from '~/logic/storage'
-import type { StickerInfo } from '~/types/sticker'
+import { seriesList, seriesMapStickerList, serverUrl, stickerPathMap } from '~/logic/storage'
+import type { GetStickersApiParams, StickerInfo } from '~/types/sticker'
+import SERIES_API from '~/api/series'
+import STICKER_API from '~/api/sticker'
 
-async function fetchSeries() {
-  const res = await fetch(`${serverUrl.value}/series`)
-  const { data } = await res.json()
-  seriesList.value = data
-  await fetchStickers()
+const stickerInfoList = ref<StickerInfo[]>([])
+
+async function initSeries() {
+  const res = await SERIES_API.getSeriesList()
+  seriesList.value = res.data.data || []
 }
 
-async function fetchStickers() {
-  const promiseArr: Promise<Response>[] = []
+function initStickerInfoList(list: StickerInfo[]) {
+  stickerInfoList.value = list
+}
 
-  seriesList.value.forEach((series) => {
-    const query = new URLSearchParams({
-      series: series.id,
-    })
+async function initStickerPathMap(query?: GetStickersApiParams) {
+  const res = await STICKER_API.getStickers(query)
+  initStickerInfoList(res.data.data || [])
 
-    promiseArr.push(fetch(`${serverUrl.value}/stickers?${query.toString()}`))
+  res.data.data?.forEach((item) => {
+    stickerPathMap.value.set(item.stickerId, item.path)
   })
+}
 
-  const resList = await Promise.all(promiseArr)
-
-  resList.forEach(async (res) => {
-    const { data } = await res.json() as { data: StickerInfo[] }
-    const stickerSeries = data[0].seriesId
-    stickerMap.value.set(stickerSeries, data)
+function initSeriesMapStickerList() {
+  seriesList.value.forEach((seriesId) => {
+    const list = stickerInfoList.value.filter(seriesInfo => seriesInfo.seriesId === seriesId.id)
+    seriesMapStickerList.value.set(seriesId.id, list)
   })
+}
+
+async function initAll() {
+  await initSeries()
+  await initStickerPathMap()
+  initSeriesMapStickerList()
 }
 </script>
 
@@ -61,7 +69,7 @@ async function fetchStickers() {
         </div>
       </div>
     </div>
-    <button @click="fetchSeries">
+    <button @click="initAll">
       Save
     </button>
   </div>

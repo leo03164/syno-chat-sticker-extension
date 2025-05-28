@@ -1,8 +1,14 @@
 import { useWebExtensionStorage } from '~/composables/useWebExtensionStorage'
 import type { StickerInfo } from '~/types/sticker'
+import type { Series } from '~/types/series'
 
 export const serverUrl = useWebExtensionStorage('server-url', '')
 
-export const seriesList = useWebExtensionStorage<{ id: string }[]>('series-list', [])
+// seriesList
+export const seriesList = useWebExtensionStorage<Series[]>('series-list', [])
 
-export const stickerMap = useWebExtensionStorage<Map<string, StickerInfo[]>>('sticker-map', new Map())
+// seriesId -> stickerList
+export const seriesMapStickerList = useWebExtensionStorage<Map<string, StickerInfo[]>>('series-map-sticker-list', new Map())
+
+// id -> path
+export const stickerPathMap = useWebExtensionStorage<Map<string, string>>('sticker-path-map', new Map())
