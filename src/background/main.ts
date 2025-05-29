@@ -64,98 +64,12 @@ onMessage('get-current-tab', async () => {
   }
 })
 
-// 定義 fleXenv 的類型
-interface FleXenvItem {
-  scrollUpdate: () => void
-  fleXcroll: {
-    scrollContent: (x: number, y: number) => void
-  }
-  fleXdata: {
-    getContentHeight: () => number
-  }
-}
-
-interface FleXenv {
-  fleXlist: FleXenvItem[]
-}
-
-declare global {
-  interface Window {
-    fleXenv?: FleXenv
-  }
-}
-
 // 定義消息類型
 interface ExecuteScrollMessage {
   action: 'scrollToBottom'
 }
 
-type CheckFleXenvResponse = Record<string, unknown> & {
-  available: boolean
-}
-
-type GetFleXenvDetailsResponse = Record<string, unknown> & {
-  fleXlistLength: number
-  firstItem: Record<string, unknown> & {
-    hasScrollUpdate: boolean
-    hasScrollContent: boolean
-    hasGetContentHeight: boolean
-    scrollUpdateType: string
-    scrollContentType: string
-    getContentHeightType: string
-  }
-}
-
-// 監聽來自 content script 的消息
-onMessage('check-fle-xenv', async ({ sender }: { sender: Endpoint & { tabId: number } }): Promise<CheckFleXenvResponse> => {
-  if (!sender.tabId) {
-    return { available: false }
-  }
-
-  try {
-    const results = await browser.scripting.executeScript({
-      target: { tabId: sender.tabId },
-      world: 'MAIN',
-      func: () => {
-        // 檢查 fleXenv 和 fleXlist 是否都存在
-        const checkFleXenv = () => {
-          if (!window.fleXenv)
-            return false
-          if (!window.fleXenv.fleXlist)
-            return false
-          if (!Array.isArray(window.fleXenv.fleXlist))
-            return false
-          if (window.fleXenv.fleXlist.length === 0)
-            return false
-
-          const firstItem = window.fleXenv.fleXlist[0]
-          if (!firstItem)
-            return false
-          if (!firstItem.scrollUpdate || typeof firstItem.scrollUpdate !== 'function')
-            return false
-          if (!firstItem.fleXcroll?.scrollContent || typeof firstItem.fleXcroll.scrollContent !== 'function')
-            return false
-          if (!firstItem.fleXdata?.getContentHeight || typeof firstItem.fleXdata.getContentHeight !== 'function')
-            return false
-
-          return true
-        }
-
-        return checkFleXenv()
-      },
-    })
-
-    const isAvailable = Boolean(results[0]?.result)
-    console.warn('[Syno Chat Sticker] fleXenv 檢查結果:', isAvailable)
-    return { available: isAvailable }
-  }
-  catch (error) {
-    console.error('Failed to check fleXenv:', error)
-    return { available: false }
-  }
-})
-
-onMessage('get-fle-xenv-details', async ({ sender }: { sender: Endpoint & { tabId: number } }): Promise<GetFleXenvDetailsResponse | null> => {
+onMessage('get-fle-xenv-details', async ({ sender }: { sender: Endpoint & { tabId: number } }): Promise<any | null> => {
   if (!sender.tabId) {
     return null
   }
@@ -172,7 +86,7 @@ onMessage('get-fle-xenv-details', async ({ sender }: { sender: Endpoint & { tabI
         if (!firstItem)
           return null
 
-        const details: GetFleXenvDetailsResponse = {
+        const details = {
           fleXlistLength: window.fleXenv.fleXlist.length,
           firstItem: {
             hasScrollUpdate: !!firstItem.scrollUpdate,
@@ -188,7 +102,7 @@ onMessage('get-fle-xenv-details', async ({ sender }: { sender: Endpoint & { tabI
       },
     })
 
-    return results[0]?.result as GetFleXenvDetailsResponse | null
+    return results[0]?.result as any | null
   }
   catch (error) {
     console.error('Failed to get fleXenv details:', error)
@@ -250,37 +164,14 @@ onMessage('get-unsafe-window', async ({ sender }) => {
         // 在頁面上下文中執行
         // 等待 fleXenv 可用
         const waitForFleXenv = () => {
-          return new Promise<FleXenv | null>((resolve) => {
-            const checkFleXenv = () => {
-              if (!window.fleXenv)
-                return false
-              if (!window.fleXenv.fleXlist)
-                return false
-              if (!Array.isArray(window.fleXenv.fleXlist))
-                return false
-              if (window.fleXenv.fleXlist.length === 0)
-                return false
-
-              const firstItem = window.fleXenv.fleXlist[0]
-              if (!firstItem)
-                return false
-              if (!firstItem.scrollUpdate || typeof firstItem.scrollUpdate !== 'function')
-                return false
-              if (!firstItem.fleXcroll?.scrollContent || typeof firstItem.fleXcroll.scrollContent !== 'function')
-                return false
-              if (!firstItem.fleXdata?.getContentHeight || typeof firstItem.fleXdata.getContentHeight !== 'function')
-                return false
-
-              return true
-            }
-
-            if (checkFleXenv() && window.fleXenv) {
+          return new Promise<any | null>((resolve) => {
+            if (window.fleXenv) {
               resolve(window.fleXenv)
               return
             }
 
             const observer = new MutationObserver(() => {
-              if (checkFleXenv() && window.fleXenv) {
+              if (window.fleXenv) {
                 observer.disconnect()
                 resolve(window.fleXenv)
               }
@@ -305,7 +196,7 @@ onMessage('get-unsafe-window', async ({ sender }) => {
 
           return {
             fleXenv: {
-              fleXlist: fleXenv.fleXlist.map((item: FleXenvItem) => ({
+              fleXlist: fleXenv.fleXlist.map((item: any) => ({
                 scrollUpdate: item.scrollUpdate.toString(),
                 fleXcroll: {
                   scrollContent: item.fleXcroll.scrollContent.toString(),
