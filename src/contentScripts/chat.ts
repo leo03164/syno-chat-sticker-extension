@@ -1,3 +1,4 @@
+import { sendMessage } from 'webext-bridge/content-script'
 import { stickerPathMap } from '~/logic/storage'
 
 export function waitForElement(selector: string, callback: (el: HTMLElement) => void) {
@@ -15,7 +16,7 @@ function getStickerHtml(stickerKey: string, stickerUrl: string | undefined) {
     return ''
   }
 
-  console.log('🚀 ~ getStickerHtml ~ stickerUrl:', stickerUrl)
+  console.warn('[Syno Chat Sticker] 貼圖 URL:', stickerUrl)
 
   return `
         <div class="sticker sticker-post sticker-only">
@@ -32,6 +33,18 @@ function getStickerHtml(stickerKey: string, stickerUrl: string | undefined) {
           </div>
         </div>
       `
+}
+
+async function scrollToBottom() {
+  try {
+    // 使用 background script 來執行滾動操作
+    await sendMessage('execute-scroll', {
+      action: 'scrollToBottom',
+    })
+  }
+  catch (error) {
+    console.error('[Syno Chat Sticker] 滾動失敗:', error)
+  }
 }
 
 async function processMsgEls(node: HTMLElement) {
@@ -57,13 +70,8 @@ async function processMsgEls(node: HTMLElement) {
   })
 
   if (flag) {
-    scrollToBottom()
+    await scrollToBottom()
   }
-}
-
-function scrollToBottom() {
-  window.fleXenv.fleXlist[0].scrollUpdate()
-  window.fleXenv.fleXlist[0].fleXcroll.scrollContent(0, window.fleXenv.fleXlist[0].fleXdata.getContentHeight())
 }
 
 export function startObserving(targetNode: HTMLElement) {
