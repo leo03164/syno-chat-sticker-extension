@@ -3,6 +3,22 @@ import type { Tabs } from 'webextension-polyfill'
 import browser from 'webextension-polyfill'
 import type { Endpoint } from 'webext-bridge'
 
+declare global {
+  interface Window {
+    fleXenv?: {
+      fleXlist: Array<{
+        scrollUpdate: () => void
+        fleXcroll: {
+          scrollContent: (x: number, y: number) => void
+        }
+        fleXdata: {
+          getContentHeight: () => number
+        }
+      }>
+    }
+  }
+}
+
 // only on dev mode
 if (import.meta.hot) {
   // @ts-expect-error for background HMR
