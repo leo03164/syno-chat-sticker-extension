@@ -65,7 +65,7 @@ async function processMsgEls(node: HTMLElement) {
 
     if (stickerUrl) {
       try {
-        const responseObj = await sendMessage('fetch-image-data', {
+        const responseObj: any = await sendMessage('fetch-image-data', {
           imageUrl: stickerUrl,
         })
 
