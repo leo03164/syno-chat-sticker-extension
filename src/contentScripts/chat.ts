@@ -56,18 +56,39 @@ async function processMsgEls(node: HTMLElement) {
 
   let flag = false
 
-  targetList.forEach((el) => {
+  // 使用 Promise.all 來並行處理所有貼圖
+  const promises = Array.from(targetList).map(async (el) => {
     // eslint-disable-next-line unicorn/prefer-dom-node-text-content
     const stickerKey = (el as HTMLElement).innerText
     const stickerUrl = stickerPathMap.value.get(stickerKey)
+    let stickerObjectUrl = ''
 
-    const stickerHtml = getStickerHtml(stickerKey, stickerUrl)
-    if (stickerHtml) {
-      el.innerHTML = stickerHtml
+    if (stickerUrl) {
+      try {
+        const responseObj = await sendMessage('fetch-image-data', {
+          imageUrl: stickerUrl,
+        })
+
+        if (responseObj) {
+          stickerObjectUrl = responseObj.result.objectUrl
+        }
+      }
+      catch (error) {
+        console.error('[Syno Chat Sticker] 處理圖片時出錯:', error)
+      }
     }
 
-    flag = true
+    const stickerHtml = getStickerHtml(stickerKey, stickerObjectUrl)
+    if (stickerHtml) {
+      el.innerHTML = stickerHtml
+      return true
+    }
+    return false
   })
+
+  // 等待所有貼圖處理完成
+  const results = await Promise.all(promises)
+  flag = results.some(result => result)
 
   if (flag) {
     await scrollToBottom()

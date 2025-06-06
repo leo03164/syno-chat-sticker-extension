@@ -164,76 +164,95 @@ onMessage('execute-scroll', async (message: { sender: Endpoint & { tabId: number
   }
 })
 
-// 監聽來自 content script 的消息
-onMessage('get-unsafe-window', async ({ sender }) => {
-  try {
-    // 等待頁面完全加載
-    await browser.tabs.executeScript(sender.tabId!, {
-      code: 'document.readyState === "complete"',
-    })
+// 在 background script 中 fetch 圖片數據來繞過 CSP
+onMessage('fetch-image-data', async (message: { sender: Endpoint & { tabId: number }, data: any }) => {
+  const { imageUrl } = message.data
 
-    // 使用 browser.scripting.executeScript 在頁面上下文中執行代碼
-    const results = await browser.scripting.executeScript({
-      target: { tabId: sender.tabId! },
-      world: 'MAIN',
-      func: () => {
-        // 在頁面上下文中執行
-        // 等待 fleXenv 可用
-        const waitForFleXenv = () => {
-          return new Promise<any | null>((resolve) => {
-            if (window.fleXenv) {
-              resolve(window.fleXenv)
-              return
-            }
-
-            const observer = new MutationObserver(() => {
-              if (window.fleXenv) {
-                observer.disconnect()
-                resolve(window.fleXenv)
-              }
-            })
-
-            observer.observe(document.body, {
-              childList: true,
-              subtree: true,
-            })
-
-            // 設置超時
-            setTimeout(() => {
-              observer.disconnect()
-              resolve(null)
-            }, 5000)
-          })
-        }
-
-        return waitForFleXenv().then((fleXenv) => {
-          if (!fleXenv)
-            return { fleXenv: null }
-
-          return {
-            fleXenv: {
-              fleXlist: fleXenv.fleXlist.map((item: any) => ({
-                scrollUpdate: item.scrollUpdate.toString(),
-                fleXcroll: {
-                  scrollContent: item.fleXcroll.scrollContent.toString(),
-                },
-                fleXdata: {
-                  getContentHeight: item.fleXdata.getContentHeight.toString(),
-                },
-              })),
-            },
-          }
-        })
-      },
-    })
-
-    // 將結果發送回 content script
-    if (results[0]?.result) {
-      const jsonData = JSON.parse(JSON.stringify(results[0].result))
-      sendMessage('unsafe-window-ready', { data: jsonData }, { context: 'content-script', tabId: sender.tabId! })
+  if (!imageUrl || typeof imageUrl !== 'string') {
+    console.error('[Syno Chat Sticker] Invalid imageUrl parameter:', imageUrl)
+    return {
+      success: false,
+      error: 'Invalid imageUrl parameter',
     }
   }
-  catch (error) {
-    console.error('Failed to execute script:', error)
+
+  try {
+    // 在 background script 中 fetch 圖片，沒有 CSP 限制
+    const response = await fetch(imageUrl)
+
+    console.warn('[Syno Chat Sticker] Fetch response:', {
+      status: response.status,
+      statusText: response.statusText,
+      type: response.type,
+      contentType: response.headers.get('content-type'),
+    })
+
+    if (!response.ok) {
+      console.error('[Syno Chat Sticker] Fetch failed with status:', response.status, response.statusText)
+      return {
+        success: false,
+        error: `Failed to fetch image: ${response.status} ${response.statusText}`,
+      }
+    }
+
+    // 將圖片轉換為 arrayBuffer
+    const arrayBuffer = await response.arrayBuffer()
+    const contentType = response.headers.get('content-type') || 'image/png'
+
+    console.warn('[Syno Chat Sticker] Response details:', {
+      contentType,
+      arrayBufferSize: arrayBuffer.byteLength,
+      responseType: response.type,
+    })
+
+    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+      console.error('[Syno Chat Sticker] Empty arrayBuffer received')
+      return {
+        success: false,
+        error: 'Empty arrayBuffer received',
+      }
+    }
+
+    // 將 arrayBuffer 轉換為 base64，以便傳輸到 content script
+    const uint8Array = new Uint8Array(arrayBuffer)
+    const base64 = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)))
+
+    if (!base64) {
+      console.error('[Syno Chat Sticker] Failed to convert arrayBuffer to base64')
+      return {
+        success: false,
+        error: 'Failed to convert arrayBuffer to base64',
+      }
+    }
+
+    // 使用 browser.scripting.executeScript 將 base64 轉換為 Object.createObjectURL 的 URL
+    const results = await browser.scripting.executeScript({
+      target: { tabId: message.sender.tabId },
+      world: 'MAIN',
+      func: (base64Data: string) => {
+        const blob = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'image/png' })
+        return URL.createObjectURL(blob)
+      },
+      args: [base64],
+    })
+
+    const objectUrl = results[0]?.result
+
+    return {
+      success: true,
+      result: {
+        contentType,
+        objectUrl,
+      },
+    }
+  }
+  catch (error: any) {
+    console.error('[Syno Chat Sticker] Background script fetch 失敗:', error)
+    console.error('[Syno Chat Sticker] Error stack:', error.stack)
+    return {
+      success: false,
+      error: error.message,
+      stack: error.stack,
+    }
   }
 })
