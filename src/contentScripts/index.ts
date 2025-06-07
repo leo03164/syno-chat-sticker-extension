@@ -52,7 +52,7 @@ import { setupApp } from '~/logic/common-setup'
       app.mount(root)
 
       // 等待 DOM 元素準備好
-      await waitForElement('body', startObserving)
+      waitForElement('body', startObserving)
     }
     catch (error) {
       console.error('[vitesse-webext] 初始化失敗:', error)
