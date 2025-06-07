@@ -213,7 +213,8 @@ onMessage('send-msg', async ({ sender }: { sender: Endpoint & { tabId: number } 
       target: { tabId: sender.tabId },
       world: 'MAIN',
       func: () => {
-        const sendButton = Array.from(document.querySelectorAll('span > button.x-btn-text')).find(btn => btn.textContent?.trim() === '傳送') as HTMLButtonElement | undefined
+        const submitBtnIndex = 5
+        const sendButton = Array.from(document.querySelectorAll('.msg-inputarea-buttons > span > button.x-btn-text'))[submitBtnIndex] as HTMLButtonElement | undefined
         if (sendButton) {
           sendButton.click()
           return true
