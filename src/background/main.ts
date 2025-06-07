@@ -256,3 +256,30 @@ onMessage('fetch-image-data', async (message: { sender: Endpoint & { tabId: numb
     }
   }
 })
+
+onMessage('send-msg', async ({ sender }: { sender: Endpoint & { tabId: number } }): Promise<any | null> => {
+  if (!sender.tabId) {
+    return null
+  }
+
+  try {
+    const results = await browser.scripting.executeScript({
+      target: { tabId: sender.tabId },
+      world: 'MAIN',
+      func: () => {
+        const sendButton = Array.from(document.querySelectorAll('span > button.x-btn-text')).find(btn => btn.textContent?.trim() === '傳送') as HTMLButtonElement | undefined
+        if (sendButton) {
+          sendButton.click()
+          return true
+        }
+        return false
+      },
+    })
+
+    return results[0]?.result as any | null
+  }
+  catch (error) {
+    console.error('Failed to send message:', error)
+    return null
+  }
+})

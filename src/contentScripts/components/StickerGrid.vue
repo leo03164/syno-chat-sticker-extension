@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { defineProps } from 'vue'
+import { sendMsg } from '../chat'
 import type { StickerInfo } from '~/types/sticker'
 
 interface Props {
@@ -10,13 +11,15 @@ defineProps<Props>()
 
 async function handleSendSticker(id: string) {
   try {
-    // 將貼圖 ID 寫入剪貼簿
-    await navigator.clipboard.writeText(`:${id}:`)
-    // 可以加入一個提示，讓使用者知道已經複製成功
-    console.warn('貼圖 ID 已複製到剪貼簿')
+    const container = document.querySelector('.chat-input-aria-main-v2.x-border-panel')
+    const editableElement = container?.querySelector('.msg-inputarea-textarea-wrap .chat-contenteditable-field.msg-inputarea-textarea')
+    if (editableElement) {
+      editableElement.textContent = id
+      await sendMsg()
+    }
   }
   catch (error) {
-    console.error('複製到剪貼簿失敗:', error)
+    console.error('貼圖傳送失敗:', error)
   }
 }
 </script>

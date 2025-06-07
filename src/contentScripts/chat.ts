@@ -16,8 +16,6 @@ function getStickerHtml(stickerKey: string, stickerUrl: string | undefined) {
     return ''
   }
 
-  console.warn('[Syno Chat Sticker] 貼圖 URL:', stickerUrl)
-
   return `
         <div class="sticker sticker-post sticker-only">
           <div ext:qtip=":${stickerKey}:"
@@ -37,7 +35,6 @@ function getStickerHtml(stickerKey: string, stickerUrl: string | undefined) {
 
 async function scrollToBottom() {
   try {
-    // 使用 background script 來執行滾動操作
     await sendMessage('execute-scroll', {
       action: 'scrollToBottom',
     })
@@ -114,4 +111,13 @@ export function startObserving(targetNode: HTMLElement) {
     childList: true,
     subtree: true,
   })
+}
+
+export async function sendMsg() {
+  try {
+    await sendMessage('send-msg', {})
+  }
+  catch (error) {
+    console.error('[Syno Chat Sticker] 傳送訊息失敗:', error)
+  }
 }
