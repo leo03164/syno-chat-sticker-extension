@@ -80,14 +80,8 @@ onMessage('get-current-tab', async () => {
   }
 })
 
-// 定義消息類型
-interface ExecuteScrollMessage {
-  action: 'scrollToBottom'
-}
-
-onMessage('execute-scroll', async (message: { sender: Endpoint & { tabId: number }, data: unknown }) => {
-  const data = message.data as ExecuteScrollMessage
-  if (!message.sender.tabId || !data || data.action !== 'scrollToBottom') {
+onMessage('execute-scroll', async (message: { sender: Endpoint & { tabId: number } }) => {
+  if (!message.sender.tabId) {
     return { success: false }
   }
 
