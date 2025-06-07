@@ -5,6 +5,7 @@ import SERIES_API from '~/api/series'
 import STICKER_API from '~/api/sticker'
 
 const stickerInfoList = ref<StickerInfo[]>([])
+const isInit = ref(false)
 
 async function initSeries() {
   const res = await SERIES_API.getSeriesList()
@@ -35,6 +36,10 @@ async function initAll() {
   await initSeries()
   await initStickerPathMap()
   initSeriesMapStickerList()
+  isInit.value = true
+  setTimeout(() => {
+    isInit.value = false
+  }, 5000)
 }
 </script>
 
@@ -69,9 +74,18 @@ async function initAll() {
         </div>
       </div>
     </div>
-    <button @click="initAll">
-      Save
-    </button>
+    <div>
+      <button
+        class="w-full py-3 px-4 bg-[#0066CC] text-white rounded-xl font-medium
+             hover:bg-[#004499] transition-colors duration-200 disabled:opacity-50"
+        @click="initAll"
+      >
+        Save
+      </button>
+      <div v-if="isInit" class="w-full text-center mt-4 text-md text-[#0066CC]">
+        {{ 'Initial Success! Enjoy the stickers!' }}
+      </div>
+    </div>
   </div>
 </template>
 
