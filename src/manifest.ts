@@ -45,7 +45,8 @@ export async function getManifest() {
     content_scripts: [
       {
         matches: [
-          '<all_urls>',
+          '*://chat.synology.com/*',
+          '*://*.chat.synology.com/*',
         ],
         js: [
           'dist/contentScripts/index.global.js',
