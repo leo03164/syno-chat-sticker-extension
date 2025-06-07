@@ -12,3 +12,6 @@ export const seriesMapStickerList = useWebExtensionStorage<Map<string, StickerIn
 
 // id -> path
 export const stickerPathMap = useWebExtensionStorage<Map<string, string>>('sticker-path-map', new Map())
+
+// id -> objectUrl
+export const stickerObjectUrlMap = useWebExtensionStorage<Map<string, string>>('sticker-object-url-map', new Map())

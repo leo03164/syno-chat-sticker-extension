@@ -1,5 +1,5 @@
 import { sendMessage } from 'webext-bridge/content-script'
-import { stickerPathMap } from '~/logic/storage'
+import { stickerObjectUrlMap, stickerPathMap } from '~/logic/storage'
 
 export function waitForElement(selector: string, callback: (el: HTMLElement) => void) {
   const interval = setInterval(() => {
@@ -59,12 +59,17 @@ async function processMsgEls(node: HTMLElement) {
 
     if (stickerUrl) {
       try {
-        const responseObj: any = await sendMessage('fetch-image-data', {
-          imageUrl: stickerUrl,
-        })
+        stickerObjectUrl = stickerObjectUrlMap.value.get(stickerKey) || ''
 
-        if (responseObj) {
-          stickerObjectUrl = responseObj.result.objectUrl
+        if (!stickerObjectUrl) {
+          const responseObj: any = await sendMessage('fetch-image-data', {
+            imageUrl: stickerUrl,
+          })
+
+          if (responseObj) {
+            stickerObjectUrl = responseObj.result.objectUrl
+            stickerObjectUrlMap.value.set(stickerKey, stickerObjectUrl)
+          }
         }
       }
       catch (error) {
@@ -87,6 +92,10 @@ async function processMsgEls(node: HTMLElement) {
   if (flag) {
     await scrollToBottom()
   }
+}
+
+export function resetStickerCache() {
+  stickerObjectUrlMap.value.clear()
 }
 
 export function startObserving(targetNode: HTMLElement) {

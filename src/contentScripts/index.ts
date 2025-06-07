@@ -1,7 +1,7 @@
 import { onMessage } from 'webext-bridge/content-script'
 import { createApp } from 'vue'
 import App from './views/App.vue'
-import { startObserving, waitForElement } from './chat'
+import { resetStickerCache, startObserving, waitForElement } from './chat'
 import { setupApp } from '~/logic/common-setup'
 
 // Firefox `browser.tabs.executeScript()` requires scripts return a primitive value
@@ -26,6 +26,7 @@ import { setupApp } from '~/logic/common-setup'
   const init = async () => {
     try {
       await waitForPageLoad()
+      resetStickerCache()
 
       // 等待一小段時間再開始初始化
       await new Promise(resolve => setTimeout(resolve, 1000))
