@@ -35,9 +35,7 @@ function getStickerHtml(stickerKey: string, stickerUrl: string | undefined) {
 
 async function scrollToBottom() {
   try {
-    await sendMessage('execute-scroll', {
-      action: 'scrollToBottom',
-    })
+    await sendMessage('execute-scroll', {})
   }
   catch (error) {
     console.error('[Syno Chat Sticker] 滾動失敗:', error)
