@@ -1,4 +1,4 @@
-import { onMessage, sendMessage } from 'webext-bridge/content-script'
+import { onMessage } from 'webext-bridge/content-script'
 import { createApp } from 'vue'
 import App from './views/App.vue'
 import { startObserving, waitForElement } from './chat'
@@ -8,7 +8,7 @@ import { setupApp } from '~/logic/common-setup'
 (() => {
   console.warn('[vitesse-webext] Hello world from content script')
 
-  // 等待頁面完全加載
+  // 等待頁面完全載入
   const waitForPageLoad = () => {
     return new Promise<void>((resolve) => {
       if (document.readyState === 'complete') {
@@ -22,36 +22,13 @@ import { setupApp } from '~/logic/common-setup'
     })
   }
 
-  // 等待 fleXenv 可用
-  const waitForFleXenv = async () => {
-    return new Promise<void>((resolve) => {
-      const checkFleXenv = async () => {
-        try {
-          // 嘗試獲取 fleXenv 的詳細信息
-          const details = await sendMessage<any>('get-fle-xenv-details', {})
-          console.warn('[vitesse-webext] fleXenv 詳細信息:', details)
-
-          resolve()
-        }
-        catch (error) {
-          console.error('[vitesse-webext] 檢查 fleXenv 時出錯:', error)
-        }
-      }
-
-      // 等待一小段時間再開始檢查，確保 background script 已經準備好
-      setTimeout(checkFleXenv, 1000)
-    })
-  }
-
   // 初始化
   const init = async () => {
     try {
       await waitForPageLoad()
-      console.warn('[vitesse-webext] 頁面加載完成')
 
       // 等待一小段時間再開始初始化
       await new Promise(resolve => setTimeout(resolve, 1000))
-      await waitForFleXenv()
 
       // communication example: send previous tab title from background page
       onMessage('tab-prev', ({ data }) => {

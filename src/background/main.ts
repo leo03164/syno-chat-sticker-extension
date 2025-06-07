@@ -85,47 +85,6 @@ interface ExecuteScrollMessage {
   action: 'scrollToBottom'
 }
 
-onMessage('get-fle-xenv-details', async ({ sender }: { sender: Endpoint & { tabId: number } }): Promise<any | null> => {
-  if (!sender.tabId) {
-    return null
-  }
-
-  try {
-    const results = await browser.scripting.executeScript({
-      target: { tabId: sender.tabId },
-      world: 'MAIN',
-      func: () => {
-        if (!window.fleXenv)
-          return null
-
-        const firstItem = window.fleXenv.fleXlist?.[0]
-        if (!firstItem)
-          return null
-
-        const details = {
-          fleXlistLength: window.fleXenv.fleXlist.length,
-          firstItem: {
-            hasScrollUpdate: !!firstItem.scrollUpdate,
-            hasScrollContent: !!firstItem.fleXcroll?.scrollContent,
-            hasGetContentHeight: !!firstItem.fleXdata?.getContentHeight,
-            scrollUpdateType: typeof firstItem.scrollUpdate,
-            scrollContentType: typeof firstItem.fleXcroll?.scrollContent,
-            getContentHeightType: typeof firstItem.fleXdata?.getContentHeight,
-          },
-        }
-
-        return details
-      },
-    })
-
-    return results[0]?.result as any | null
-  }
-  catch (error) {
-    console.error('Failed to get fleXenv details:', error)
-    return null
-  }
-})
-
 onMessage('execute-scroll', async (message: { sender: Endpoint & { tabId: number }, data: unknown }) => {
   const data = message.data as ExecuteScrollMessage
   if (!message.sender.tabId || !data || data.action !== 'scrollToBottom') {
@@ -180,13 +139,6 @@ onMessage('fetch-image-data', async (message: { sender: Endpoint & { tabId: numb
     // 在 background script 中 fetch 圖片，沒有 CSP 限制
     const response = await fetch(imageUrl)
 
-    console.warn('[Syno Chat Sticker] Fetch response:', {
-      status: response.status,
-      statusText: response.statusText,
-      type: response.type,
-      contentType: response.headers.get('content-type'),
-    })
-
     if (!response.ok) {
       console.error('[Syno Chat Sticker] Fetch failed with status:', response.status, response.statusText)
       return {
@@ -198,12 +150,6 @@ onMessage('fetch-image-data', async (message: { sender: Endpoint & { tabId: numb
     // 將圖片轉換為 arrayBuffer
     const arrayBuffer = await response.arrayBuffer()
     const contentType = response.headers.get('content-type') || 'image/png'
-
-    console.warn('[Syno Chat Sticker] Response details:', {
-      contentType,
-      arrayBufferSize: arrayBuffer.byteLength,
-      responseType: response.type,
-    })
 
     if (!arrayBuffer || arrayBuffer.byteLength === 0) {
       console.error('[Syno Chat Sticker] Empty arrayBuffer received')
