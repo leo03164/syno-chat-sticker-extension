@@ -97,21 +97,14 @@ onMessage('execute-scroll', async (message: { sender: Endpoint & { tabId: number
       world: 'MAIN',
       func: () => {
         if (!window.fleXenv?.fleXlist?.[0]) {
-          console.warn('[Syno Chat Sticker] fleXenv 不可用')
           return false
         }
 
-        try {
-          const firstItem = window.fleXenv.fleXlist[0]
-          firstItem.scrollUpdate()
-          const height = firstItem.fleXdata.getContentHeight()
-          firstItem.fleXcroll.scrollContent(0, height)
-          return true
-        }
-        catch (error) {
-          console.error('[Syno Chat Sticker] 滾動操作失敗:', error)
-          return false
-        }
+        const firstItem = window.fleXenv.fleXlist[0]
+        firstItem.scrollUpdate()
+        const height = firstItem.fleXdata.getContentHeight()
+        firstItem.fleXcroll.scrollContent(0, height)
+        return true
       },
     })
 

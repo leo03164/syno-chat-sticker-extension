@@ -53,7 +53,6 @@ async function processMsgEls(node: HTMLElement) {
 
   let flag = false
 
-  // 使用 Promise.all 來並行處理所有貼圖
   const promises = Array.from(targetList).map(async (el) => {
     // eslint-disable-next-line unicorn/prefer-dom-node-text-content
     const stickerKey = (el as HTMLElement).innerText
@@ -71,7 +70,7 @@ async function processMsgEls(node: HTMLElement) {
         }
       }
       catch (error) {
-        console.error('[Syno Chat Sticker] 處理圖片時出錯:', error)
+        console.error('[Syno Chat Sticker] 轉換 Object URL 失敗:', error)
       }
     }
 
