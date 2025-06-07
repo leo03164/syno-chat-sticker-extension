@@ -20,6 +20,10 @@ const seriesListForDisplay = computed<SeriesForDisplay[]>(() => {
     }
   })
 })
+
+const stickers = computed(() => {
+  return seriesMapStickerList.value.get(currentSeries.value) || []
+})
 </script>
 
 <template>
@@ -54,7 +58,7 @@ const seriesListForDisplay = computed<SeriesForDisplay[]>(() => {
 
       <!-- 貼圖網格區 -->
       <div class="flex-1 overflow-y-auto px-3 py-2" style="overflow-y: overlay;">
-        <StickerGrid :stickers="seriesMapStickerList.get(currentSeries) || []" />
+        <StickerGrid :stickers="stickers" />
       </div>
 
       <!-- 底部資訊 -->
