@@ -10,16 +10,13 @@ interface Props {
 defineProps<Props>()
 
 async function handleSendSticker(id: string) {
-  try {
-    const container = document.querySelector('.chat-input-aria-main-v2.x-border-panel')
-    const editableElement = container?.querySelector('.msg-inputarea-textarea-wrap .chat-contenteditable-field.msg-inputarea-textarea')
-    if (editableElement) {
-      editableElement.textContent = id
-      await sendMsg()
-    }
-  }
-  catch (error) {
-    console.error('貼圖傳送失敗:', error)
+  const container = document.querySelector('.chat-input-aria-main-v2.x-border-panel')
+  const editableElement = container?.querySelector('.msg-inputarea-textarea-wrap .chat-contenteditable-field.msg-inputarea-textarea')
+  if (editableElement) {
+    editableElement.textContent = id
+    await sendMsg().catch((error) => {
+      console.error('貼圖傳送失敗:', error)
+    })
   }
 }
 </script>
