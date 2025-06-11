@@ -58,22 +58,20 @@ async function processMsgEls(node: HTMLElement) {
     let stickerObjectUrl = ''
 
     if (stickerUrl) {
-      try {
-        stickerObjectUrl = stickerObjectUrlMap.value.get(stickerKey) || ''
+      stickerObjectUrl = stickerObjectUrlMap.value.get(stickerKey) || ''
 
-        if (!stickerObjectUrl) {
-          const responseObj: any = await sendMessage('fetch-image-data', {
-            imageUrl: stickerUrl,
-          })
+      if (!stickerObjectUrl) {
+        const responseObj = await sendMessage('fetch-image-data', {
+          imageUrl: stickerUrl,
+        })
 
-          if (responseObj) {
-            stickerObjectUrl = responseObj.result.objectUrl
-            stickerObjectUrlMap.value.set(stickerKey, stickerObjectUrl)
-          }
+        if (responseObj.success) {
+          stickerObjectUrl = responseObj.result
+          stickerObjectUrlMap.value.set(stickerKey, stickerObjectUrl)
         }
-      }
-      catch (error) {
-        console.error('[Syno Chat Sticker] 轉換 Object URL 失敗:', error)
+        else {
+          console.error('[Syno Chat Sticker] 轉換 Object URL 失敗:', responseObj.error)
+        }
       }
     }
 

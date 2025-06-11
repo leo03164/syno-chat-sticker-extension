@@ -2,6 +2,7 @@ import { onMessage, sendMessage } from 'webext-bridge/background'
 import type { Tabs } from 'webextension-polyfill'
 import browser from 'webextension-polyfill'
 import type { Endpoint } from 'webext-bridge'
+import type { Result } from '../types/event'
 
 declare global {
   interface Window {
@@ -66,28 +67,14 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
   sendMessage('tab-prev', { title: tab.title }, { context: 'content-script', tabId })
 })
 
-onMessage('get-current-tab', async () => {
-  try {
-    const tab = await browser.tabs.get(previousTabId)
-    return {
-      title: tab?.title,
-    }
-  }
-  catch {
-    return {
-      title: undefined,
-    }
-  }
-})
-
-onMessage('execute-scroll', async (message: { sender: Endpoint & { tabId: number } }) => {
-  if (!message.sender.tabId) {
+onMessage('execute-scroll', async ({ sender }) => {
+  if (!sender.tabId) {
     return { success: false }
   }
 
   try {
     const results = await browser.scripting.executeScript({
-      target: { tabId: message.sender.tabId },
+      target: { tabId: sender.tabId },
       world: 'MAIN',
       func: () => {
         if (!window.fleXenv?.fleXlist?.[0]) {
@@ -111,11 +98,10 @@ onMessage('execute-scroll', async (message: { sender: Endpoint & { tabId: number
 })
 
 // 在 background script 中 fetch 圖片數據來繞過 CSP
-onMessage('fetch-image-data', async (message: { sender: Endpoint & { tabId: number }, data: any }) => {
-  const { imageUrl } = message.data
+onMessage('fetch-image-data', async ({ sender, data }): Promise<Result<string>> => {
+  const { imageUrl } = data as { imageUrl: string }
 
   if (!imageUrl || typeof imageUrl !== 'string') {
-    console.error('[Syno Chat Sticker] Invalid imageUrl parameter:', imageUrl)
     return {
       success: false,
       error: 'Invalid imageUrl parameter',
@@ -127,22 +113,20 @@ onMessage('fetch-image-data', async (message: { sender: Endpoint & { tabId: numb
     const response = await fetch(imageUrl)
 
     if (!response.ok) {
-      console.error('[Syno Chat Sticker] Fetch failed with status:', response.status, response.statusText)
       return {
         success: false,
         error: `Failed to fetch image: ${response.status} ${response.statusText}`,
       }
     }
 
+    // TODO: 感覺轉換 arrayBuffer 可以抽離出來
     // 將圖片轉換為 arrayBuffer
     const arrayBuffer = await response.arrayBuffer()
-    const contentType = response.headers.get('content-type') || 'image/png'
 
     if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-      console.error('[Syno Chat Sticker] Empty arrayBuffer received')
       return {
         success: false,
-        error: 'Empty arrayBuffer received',
+        error: 'transform arrayBuffer to base64 failed',
       }
     }
 
@@ -151,16 +135,15 @@ onMessage('fetch-image-data', async (message: { sender: Endpoint & { tabId: numb
     const base64 = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)))
 
     if (!base64) {
-      console.error('[Syno Chat Sticker] Failed to convert arrayBuffer to base64')
       return {
         success: false,
-        error: 'Failed to convert arrayBuffer to base64',
+        error: 'transform arrayBuffer to base64 failed',
       }
     }
 
     // 使用 browser.scripting.executeScript 將 base64 轉換為 Object.createObjectURL 的 URL
     const results = await browser.scripting.executeScript({
-      target: { tabId: message.sender.tabId },
+      target: { tabId: sender.tabId },
       world: 'MAIN',
       func: (base64Data: string) => {
         const blob = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'image/png' })
@@ -169,23 +152,17 @@ onMessage('fetch-image-data', async (message: { sender: Endpoint & { tabId: numb
       args: [base64],
     })
 
-    const objectUrl = results[0]?.result
+    const objectUrl = results[0]?.result as string
 
     return {
       success: true,
-      result: {
-        contentType,
-        objectUrl,
-      },
+      result: objectUrl,
     }
   }
   catch (error: any) {
-    console.error('[Syno Chat Sticker] Background script fetch 失敗:', error)
-    console.error('[Syno Chat Sticker] Error stack:', error.stack)
     return {
       success: false,
-      error: error.message,
-      stack: error.stack,
+      error: error.message as string,
     }
   }
 })

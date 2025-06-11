@@ -1,10 +1,11 @@
 import type { ProtocolWithReturn } from 'webext-bridge'
+import type { Result } from './src/types/event'
 
 declare module 'webext-bridge' {
   export interface ProtocolMap {
     // define message protocol types
     // see https://github.com/antfu/webext-bridge#type-safe-protocols
     'tab-prev': { title: string | undefined }
-    'get-current-tab': ProtocolWithReturn<{ tabId: number }, { title?: string }>
+    'fetch-image-data': ProtocolWithReturn<{ imageUrl: string }, Result<string>>
   }
 }
