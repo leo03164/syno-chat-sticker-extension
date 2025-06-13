@@ -6,7 +6,7 @@ import { setupApp } from '~/logic/common-setup'
 
 // Firefox `browser.tabs.executeScript()` requires scripts return a primitive value
 (() => {
-  console.warn('[vitesse-webext] Hello world from content script')
+  console.log('[vitesse-webext] Hello world from content script')
 
   // 等待頁面完全載入
   const waitForPageLoad = () => {
@@ -33,7 +33,7 @@ import { setupApp } from '~/logic/common-setup'
 
       // communication example: send previous tab title from background page
       onMessage('tab-prev', ({ data }) => {
-        console.warn(`[vitesse-webext] Navigate from page "${data.title}"`)
+        console.log(`[vitesse-webext] Navigate from page "${data.title}"`)
       })
 
       // mount component to context window

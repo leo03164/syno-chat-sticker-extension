@@ -33,13 +33,39 @@ function getStickerHtml(stickerKey: string, stickerUrl: string | undefined) {
       `
 }
 
+// 如果往下滾動則滾動到最下方
 async function scrollToBottom() {
-  try {
-    await sendMessage('execute-scroll', {})
+  const success = await sendMessage('execute-scroll', { action: 'scroll-to-bottom' })
+  if (!success) {
+    console.error('[Syno Chat Sticker] 滾動到最下方失敗')
   }
-  catch (error) {
-    console.error('[Syno Chat Sticker] 滾動失敗:', error)
+}
+
+// 如果往上滾動，則更新狀態列
+async function updateBar() {
+  const success = await sendMessage('execute-scroll', { action: 'update-bar' })
+  if (!success) {
+    console.error('[Syno Chat Sticker] 更新狀態列失敗')
   }
+}
+
+async function getImgFromCache(stickerKey: string, stickerUrl: string) {
+  let stickerObjectUrl = stickerObjectUrlMap.value.get(stickerKey) || ''
+  if (stickerObjectUrl)
+    return stickerObjectUrl
+
+  const responseObj = await sendMessage('fetch-image-data', {
+    imageUrl: stickerUrl,
+  })
+
+  if (responseObj.success) {
+    stickerObjectUrl = responseObj.result
+    stickerObjectUrlMap.value.set(stickerKey, stickerObjectUrl)
+  }
+  else {
+    console.error('[Syno Chat Sticker] 轉換 Object URL 失敗:', responseObj.error)
+  }
+  return stickerObjectUrl
 }
 
 async function processMsgEls(node: HTMLElement) {
@@ -49,63 +75,48 @@ async function processMsgEls(node: HTMLElement) {
     return
   }
 
-  let flag = false
-
   const promises = Array.from(targetList).map(async (el) => {
     // eslint-disable-next-line unicorn/prefer-dom-node-text-content
     const stickerKey = (el as HTMLElement).innerText
     const stickerUrl = stickerPathMap.value.get(stickerKey)
-    let stickerObjectUrl = ''
+    if (!stickerUrl)
+      return false
 
-    if (stickerUrl) {
-      stickerObjectUrl = stickerObjectUrlMap.value.get(stickerKey) || ''
-
-      if (!stickerObjectUrl) {
-        const responseObj = await sendMessage('fetch-image-data', {
-          imageUrl: stickerUrl,
-        })
-
-        if (responseObj.success) {
-          stickerObjectUrl = responseObj.result
-          stickerObjectUrlMap.value.set(stickerKey, stickerObjectUrl)
-        }
-        else {
-          console.error('[Syno Chat Sticker] 轉換 Object URL 失敗:', responseObj.error)
-        }
-      }
-    }
-
+    const stickerObjectUrl = await getImgFromCache(stickerKey, stickerUrl)
     const stickerHtml = getStickerHtml(stickerKey, stickerObjectUrl)
-    if (stickerHtml) {
-      el.innerHTML = stickerHtml
-      return true
-    }
-    return false
+
+    if (!stickerHtml)
+      return false
+
+    el.innerHTML = stickerHtml
+    return true
   })
 
   // 等待所有貼圖處理完成
   const results = await Promise.all(promises)
-  flag = results.some(result => result)
-
-  if (flag) {
-    await scrollToBottom()
-  }
+  return results.some(result => result)
 }
 
 export function resetStickerCache() {
   stickerObjectUrlMap.value.clear()
 }
 
-export function startObserving(targetNode: HTMLElement) {
-  processMsgEls(document.body)
+export async function startObserving(targetNode: HTMLElement) {
+  const isSuccess = await processMsgEls(document.body)
+  if (isSuccess) {
+    await scrollToBottom()
+  }
 
   const observer = new MutationObserver((mutationsList) => {
-    mutationsList.forEach((mutation) => {
+    mutationsList.forEach(async (mutation) => {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        mutation.addedNodes.forEach((node) => {
+        mutation.addedNodes.forEach(async (node) => {
           if (!(node instanceof HTMLElement))
             return
-          processMsgEls(node)
+          const isSuccess = await processMsgEls(node)
+          if (isSuccess) {
+            await updateBar()
+          }
         })
       }
     })

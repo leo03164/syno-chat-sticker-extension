@@ -3,6 +3,7 @@ import type { Tabs } from 'webextension-polyfill'
 import browser from 'webextension-polyfill'
 import type { Endpoint } from 'webext-bridge'
 import type { Result } from '../types/event'
+import { transformArrayBufferToBase64 } from '~/helper/base64'
 
 declare global {
   interface Window {
@@ -67,33 +68,36 @@ browser.tabs.onActivated.addListener(async ({ tabId }) => {
   sendMessage('tab-prev', { title: tab.title }, { context: 'content-script', tabId })
 })
 
-onMessage('execute-scroll', async ({ sender }) => {
+onMessage('execute-scroll', async ({ sender, data }): Promise<boolean> => {
   if (!sender.tabId) {
-    return { success: false }
+    return false
   }
 
   try {
     const results = await browser.scripting.executeScript({
       target: { tabId: sender.tabId },
       world: 'MAIN',
-      func: () => {
+      func: (action: 'update-bar' | 'scroll-to-bottom') => {
         if (!window.fleXenv?.fleXlist?.[0]) {
           return false
         }
 
         const firstItem = window.fleXenv.fleXlist[0]
         firstItem.scrollUpdate()
-        const height = firstItem.fleXdata.getContentHeight()
-        firstItem.fleXcroll.scrollContent(0, height)
+        if (action === 'scroll-to-bottom') {
+          const height = firstItem.fleXdata.getContentHeight()
+          firstItem.fleXcroll.scrollContent(0, height)
+        }
+
         return true
       },
+      args: [data.action],
     })
-
-    return { success: results[0]?.result ?? false }
+    return results[0]?.result as boolean
   }
   catch (error) {
     console.error('Failed to execute scroll:', error)
-    return { success: false }
+    return false
   }
 })
 
@@ -119,20 +123,9 @@ onMessage('fetch-image-data', async ({ sender, data }): Promise<Result<string>> 
       }
     }
 
-    // TODO: 感覺轉換 arrayBuffer 可以抽離出來
     // 將圖片轉換為 arrayBuffer
     const arrayBuffer = await response.arrayBuffer()
-
-    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-      return {
-        success: false,
-        error: 'transform arrayBuffer to base64 failed',
-      }
-    }
-
-    // 將 arrayBuffer 轉換為 base64，以便傳輸到 content script
-    const uint8Array = new Uint8Array(arrayBuffer)
-    const base64 = btoa(String.fromCharCode.apply(null, Array.from(uint8Array)))
+    const base64 = transformArrayBufferToBase64(arrayBuffer)
 
     if (!base64) {
       return {
@@ -167,7 +160,7 @@ onMessage('fetch-image-data', async ({ sender, data }): Promise<Result<string>> 
   }
 })
 
-onMessage('send-msg', async ({ sender }: { sender: Endpoint & { tabId: number } }): Promise<any | null> => {
+onMessage('send-msg', async ({ sender }) => {
   if (!sender.tabId) {
     return null
   }
@@ -187,7 +180,7 @@ onMessage('send-msg', async ({ sender }: { sender: Endpoint & { tabId: number } 
       },
     })
 
-    return results[0]?.result as any | null
+    return results[0]?.result
   }
   catch (error) {
     console.error('Failed to send message:', error)
