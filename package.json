@@ -1,7 +1,7 @@
 {
-  "name": "vitesse-webext",
+  "name": "syno-chat-sticker-extension",
   "displayName": "Syno Chat Sticker Extension",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@9.7.1",
   "description": "[description]",
