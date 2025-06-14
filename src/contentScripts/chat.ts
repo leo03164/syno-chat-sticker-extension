@@ -34,7 +34,7 @@ function getStickerHtml(stickerKey: string, stickerUrl: string | undefined) {
 }
 
 // 如果往下滾動則滾動到最下方
-async function scrollToBottom() {
+export async function scrollToBottom() {
   const success = await sendMessage('execute-scroll', { action: 'scroll-to-bottom' })
   if (!success) {
     console.error('[Syno Chat Sticker] 滾動到最下方失敗')
@@ -42,7 +42,7 @@ async function scrollToBottom() {
 }
 
 // 如果往上滾動，則更新狀態列
-async function updateBar() {
+export async function updateBar() {
   const success = await sendMessage('execute-scroll', { action: 'update-bar' })
   if (!success) {
     console.error('[Syno Chat Sticker] 更新狀態列失敗')
@@ -129,10 +129,8 @@ export async function startObserving(targetNode: HTMLElement) {
 }
 
 export async function sendMsg() {
-  try {
-    await sendMessage('send-msg', {})
-  }
-  catch (error) {
-    console.error('[Syno Chat Sticker] 傳送訊息失敗:', error)
+  const isSuccess = await sendMessage('send-msg', {})
+  if (!isSuccess) {
+    console.error('[Syno Chat Sticker] 傳送訊息失敗:')
   }
 }

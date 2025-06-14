@@ -1,4 +1,3 @@
-import { onMessage } from 'webext-bridge/content-script'
 import { createApp } from 'vue'
 import App from './views/App.vue'
 import { resetStickerCache, startObserving, waitForElement } from './chat'
@@ -6,7 +5,7 @@ import { setupApp } from '~/logic/common-setup'
 
 // Firefox `browser.tabs.executeScript()` requires scripts return a primitive value
 (() => {
-  console.log('[vitesse-webext] Hello world from content script')
+  console.log('[syno-chat-sticker-extension] Hello world from content script')
 
   // 等待頁面完全載入
   const waitForPageLoad = () => {
@@ -30,11 +29,6 @@ import { setupApp } from '~/logic/common-setup'
 
       // 等待一小段時間再開始初始化
       await new Promise(resolve => setTimeout(resolve, 1000))
-
-      // communication example: send previous tab title from background page
-      onMessage('tab-prev', ({ data }) => {
-        console.log(`[vitesse-webext] Navigate from page "${data.title}"`)
-      })
 
       // mount component to context window
       const container = document.createElement('div')

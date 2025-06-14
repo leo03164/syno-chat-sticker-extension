@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { defineProps } from 'vue'
-import { sendMsg } from '../chat'
+import { scrollToBottom, sendMsg } from '../chat'
 import type { StickerInfo } from '~/types/sticker'
 
 interface Props {
@@ -14,9 +14,13 @@ async function handleSendSticker(id: string) {
   const editableElement = container?.querySelector('.msg-inputarea-textarea-wrap .chat-contenteditable-field.msg-inputarea-textarea')
   if (editableElement) {
     editableElement.textContent = id
-    await sendMsg().catch((error) => {
-      console.error('貼圖傳送失敗:', error)
-    })
+    await sendMsg()
+      .catch((error) => {
+        console.error('貼圖傳送失敗:', error)
+      })
+    setTimeout(async () => {
+      await scrollToBottom()
+    }, 50)
   }
 }
 </script>

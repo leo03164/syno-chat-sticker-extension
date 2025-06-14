@@ -45,29 +45,6 @@ browser.runtime.onInstalled.addListener((): void => {
   console.log('Extension installed')
 })
 
-let previousTabId = 0
-
-// communication example: send previous tab title from background page
-// see shim.d.ts for type declaration
-browser.tabs.onActivated.addListener(async ({ tabId }) => {
-  if (!previousTabId) {
-    previousTabId = tabId
-    return
-  }
-
-  let tab: Tabs.Tab
-
-  try {
-    tab = await browser.tabs.get(previousTabId)
-    previousTabId = tabId
-  }
-  catch {
-    return
-  }
-
-  sendMessage('tab-prev', { title: tab.title }, { context: 'content-script', tabId })
-})
-
 onMessage('execute-scroll', async ({ sender, data }): Promise<boolean> => {
   if (!sender.tabId) {
     return false
@@ -160,9 +137,9 @@ onMessage('fetch-image-data', async ({ sender, data }): Promise<Result<string>> 
   }
 })
 
-onMessage('send-msg', async ({ sender }) => {
+onMessage('send-msg', async ({ sender }): Promise<boolean> => {
   if (!sender.tabId) {
-    return null
+    return false
   }
 
   try {
@@ -180,10 +157,10 @@ onMessage('send-msg', async ({ sender }) => {
       },
     })
 
-    return results[0]?.result
+    return results[0]?.result as boolean
   }
   catch (error) {
     console.error('Failed to send message:', error)
-    return null
+    return false
   }
 })
