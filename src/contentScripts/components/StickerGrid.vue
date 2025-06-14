@@ -22,7 +22,7 @@ async function handleSendSticker(stickerId: string) {
       })
     setTimeout(async () => {
       await scrollToBottom()
-    }, 50)
+    }, 100)
   }
 }
 </script>
