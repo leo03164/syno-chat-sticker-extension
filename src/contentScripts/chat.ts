@@ -1,4 +1,5 @@
 import { sendMessage } from 'webext-bridge/content-script'
+import { debounce } from 'lodash-es'
 import { stickerObjectUrlMap, stickerPathMap } from '~/logic/storage'
 
 export function waitForElement(selector: string, callback: (el: HTMLElement) => void) {
@@ -76,14 +77,27 @@ async function processMsgEls(node: HTMLElement) {
   }
 
   const promises = Array.from(targetList).map(async (el) => {
-    // eslint-disable-next-line unicorn/prefer-dom-node-text-content
-    const stickerKey = (el as HTMLElement).innerText
-    const stickerUrl = stickerPathMap.value.get(stickerKey)
+    const htmlText = (el as HTMLElement).textContent
+    if (!htmlText)
+      return false
+
+    // Avoid XSS
+    const regexPattern = /base64=MjAxNzExLU1JUy1GRS1jaGVubGVv_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})_([0-9a-f]{64})/g
+    const matches = [...htmlText.matchAll(regexPattern)]
+
+    if (matches.length === 0 || matches[0].length !== 3) {
+      return false
+    }
+
+    // TODO: 這裡的 seriesId 用來處理假如 localStorage 沒有存，則去拉取，未來可以用
+    const [_unusedVar, seriesId, stickerId] = matches[0]
+
+    const stickerUrl = stickerPathMap.value.get(stickerId)
     if (!stickerUrl)
       return false
 
-    const stickerObjectUrl = await getImgFromCache(stickerKey, stickerUrl)
-    const stickerHtml = getStickerHtml(stickerKey, stickerObjectUrl)
+    const stickerObjectUrl = await getImgFromCache(stickerId, stickerUrl)
+    const stickerHtml = getStickerHtml(stickerId, stickerObjectUrl)
 
     if (!stickerHtml)
       return false
@@ -107,19 +121,34 @@ export async function startObserving(targetNode: HTMLElement) {
     await scrollToBottom()
   }
 
-  const observer = new MutationObserver((mutationsList) => {
+  const debounceUpdateBar = debounce(async () => {
+    await updateBar()
+  }, 300)
+  const debounceScrollToBottom = debounce(async () => {
+    await scrollToBottom()
+  }, 300)
+
+  let urlHash = window.location.hash
+  let previousUrlHash = window.location.hash
+
+  const observer = new MutationObserver(async (mutationsList) => {
     mutationsList.forEach(async (mutation) => {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
         mutation.addedNodes.forEach(async (node) => {
           if (!(node instanceof HTMLElement))
             return
-          const isSuccess = await processMsgEls(node)
-          if (isSuccess) {
-            await updateBar()
-          }
+          await processMsgEls(node)
+          urlHash = window.location.hash
         })
       }
     })
+    if (urlHash !== previousUrlHash) {
+      await debounceScrollToBottom()
+      previousUrlHash = urlHash
+    }
+    else {
+      await debounceUpdateBar()
+    }
   })
 
   observer.observe(targetNode, {
