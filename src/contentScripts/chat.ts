@@ -1,4 +1,5 @@
 import { sendMessage } from 'webext-bridge/content-script'
+import { debounce } from 'lodash-es'
 import { stickerObjectUrlMap, stickerPathMap } from '~/logic/storage'
 
 export function waitForElement(selector: string, callback: (el: HTMLElement) => void) {
@@ -120,19 +121,34 @@ export async function startObserving(targetNode: HTMLElement) {
     await scrollToBottom()
   }
 
-  const observer = new MutationObserver((mutationsList) => {
+  const debounceUpdateBar = debounce(async () => {
+    await updateBar()
+  }, 300)
+  const debounceScrollToBottom = debounce(async () => {
+    await scrollToBottom()
+  }, 300)
+
+  let urlHash = window.location.hash
+  let previousUrlHash = window.location.hash
+
+  const observer = new MutationObserver(async (mutationsList) => {
     mutationsList.forEach(async (mutation) => {
       if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
         mutation.addedNodes.forEach(async (node) => {
           if (!(node instanceof HTMLElement))
             return
-          const isSuccess = await processMsgEls(node)
-          if (isSuccess) {
-            await updateBar()
-          }
+          await processMsgEls(node)
+          urlHash = window.location.hash
         })
       }
     })
+    if (urlHash !== previousUrlHash) {
+      await debounceScrollToBottom()
+      previousUrlHash = urlHash
+    }
+    else {
+      await debounceUpdateBar()
+    }
   })
 
   observer.observe(targetNode, {
