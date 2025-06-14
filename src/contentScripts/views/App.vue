@@ -58,7 +58,7 @@ const stickers = computed(() => {
 
       <!-- 貼圖網格區 -->
       <div class="flex-1 overflow-y-auto px-3 py-2" style="overflow-y: overlay;">
-        <StickerGrid :stickers="stickers" />
+        <StickerGrid :stickers="stickers" :series-id="currentSeries" />
       </div>
 
       <!-- 底部資訊 -->

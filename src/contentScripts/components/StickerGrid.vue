@@ -5,15 +5,17 @@ import type { StickerInfo } from '~/types/sticker'
 
 interface Props {
   stickers: StickerInfo[]
+  seriesId: string
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
-async function handleSendSticker(id: string) {
+async function handleSendSticker(stickerId: string) {
   const container = document.querySelector('.chat-input-aria-main-v2.x-border-panel')
   const editableElement = container?.querySelector('.msg-inputarea-textarea-wrap .chat-contenteditable-field.msg-inputarea-textarea')
   if (editableElement) {
-    editableElement.textContent = id
+    const textContent = `base64=MjAxNzExLU1JUy1GRS1jaGVubGVv_${props.seriesId}_${stickerId}`
+    editableElement.textContent = textContent
     await sendMsg()
       .catch((error) => {
         console.error('貼圖傳送失敗:', error)
