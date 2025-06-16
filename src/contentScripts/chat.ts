@@ -82,7 +82,7 @@ async function processMsgEls(node: HTMLElement) {
       return false
 
     // Avoid XSS
-    const regexPattern = /base64=MjAxNzExLU1JUy1GRS1jaGVubGVv_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})_([0-9a-f]{64})/g
+    const regexPattern = /base64=TUlTLUZFLWNoZW5sZW8=_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})_([0-9a-f]{64})/g
     const matches = [...htmlText.matchAll(regexPattern)]
 
     if (matches.length === 0 || matches[0].length !== 3) {
